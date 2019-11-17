@@ -78,7 +78,7 @@ such, because of bias. [...] Bias can entail manipulation in the analysis or rep
                              "7: Underpowered exploratory epidemiological study"="p7",
                              "8: Discovery-oriented exploratory research with massive testing"="p8",
                              "9: As in previous example, but with more limited bias (more standardized)"="p9"
-                           ))
+                           ), selected = "p1")
                     ),	
                     
                     
@@ -86,6 +86,7 @@ such, because of bias. [...] Bias can entail manipulation in the analysis or rep
                     # Output column
                     
                     column(8,
+                           # tableOutput("table"),
                            htmlOutput("res")
                     )			
                   ),
@@ -187,29 +188,30 @@ server <- function(input, output, session) {
 		}
 	})
 	
-	# df.raw <- reactive({
-	#   df.raw <- computePPV()$df %>%
-	#     select(ground, test)
-	#   # values <- unlist(computePPV())
-	# })
-	
+	df.raw <- reactive({
+	  df.raw <- computePPV()$df %>%
+	    select(ground, test)
+	  # values <- unlist(computePPV())
+	})
 
-	# output$res <- renderTable({
+
+	# output$table <- renderTable({
 	#   computePPV()$df %>%
 	#     select(ground, test) %>%
 	#     count(ground, test)
-	#   
+	# 
 	# })
-	
+
 	# output$plot <- renderPlotly({
 	#   plot1 <- ggplot(df.raw()) +
-	#     geom_mosaic(aes(x = product(ground), fill = test)) + 
+	#     geom_mosaic(aes(x = product(ground), fill = test)) +
 	#     scale_x_continuous(position = "top") +
 	#     labs(x = "Null Hypothesis", y = "Alternative Hypothesis")
 	#   ggplotly(plot1)
-	#   
+	# 
 	# })
 	
+
 	output$res <- renderUI({
 	  PPV <- computePPV()
 	  df.raw <- computePPV()$df %>%
@@ -228,12 +230,18 @@ server <- function(input, output, session) {
 	      "%; true negatives: ", round(PPV$truerejection/PPV$c*100, 1), "%; false positives: ", round(PPV$falsealarm/PPV$c*100, 1), "%<br><br>",
 	      "<b>Positive predictive value (PPV)</b>: ", round(PPV$ppv*100, 1), "% of claimed findings are true</b><br>
 				 <b>False discovery rate (FDR)</b>: ", round(PPV$fdr*100, 1), "% of claimed findings are false</b>")),
-	    h4("If we consider all findings, it looks like this (each point is one study):"),
+	    h4("If we consider all findings, it looks like this:"),
 	    renderPlotly({
-	        plot1 <- ggplot(df.raw) +
-	          geom_mosaic(aes(x = product(ground), fill = test)) +
-	          labs(x = "Null Hypothesis", y = "Alternative Hypothesis")
-	        ggplotly(plot1)
+	        plot1 <- df.raw %>%
+	          mutate(ground = case_when(ground == "TRUE" ~ "H0 is false",
+	                                    ground == "FALSE" ~ "H0 is true")) %>%
+	          mutate(test = case_when(test == "TRUE" ~ "H0 rejected",
+	                                  test == "FALSE" ~ "H0 not rejected")) %>%
+	          ggplot() +
+	          geom_mosaic(aes(x = product(ground), fill = test), show.legend = F) +
+	          labs(x = "", y = "") +
+	          theme_classic()
+	        ggplotly(plot1, height = 550)
 	    })
 	  ))
 	  
