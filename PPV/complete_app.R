@@ -1,6 +1,8 @@
 library(shiny)
 library(shinyjs)
 library(shinythemes)
+library(tidyverse)
+library(plotly)
 
 helpPopup <- function(title, content,
                       placement=c('right', 'top', 'left', 'bottom'),
@@ -185,39 +187,58 @@ server <- function(input, output, session) {
 		}
 	})
 	
+	# df.raw <- reactive({
+	#   df.raw <- computePPV()$df %>%
+	#     select(ground, test)
+	#   # values <- unlist(computePPV())
+	# })
+	
 
+	# output$res <- renderTable({
+	#   computePPV()$df %>%
+	#     select(ground, test) %>%
+	#     count(ground, test)
+	#   
+	# })
+	
+	# output$plot <- renderPlotly({
+	#   plot1 <- ggplot(df.raw()) +
+	#     geom_mosaic(aes(x = product(ground), fill = test)) + 
+	#     scale_x_continuous(position = "top") +
+	#     labs(x = "Null Hypothesis", y = "Alternative Hypothesis")
+	#   ggplotly(plot1)
+	#   
+	# })
 	
 	output$res <- renderUI({
-		PPV <- computePPV()
-			
-		# color translation tables
-		colTrans <- c("darkblue", "red", "orange", "green3")
-		names(colTrans) <- c("false negative", "false positive", "true negative", "true positive")
-		
-		colTrans2 <- c("white", "red", "white", "green3")
-		names(colTrans2) <- c("false negative", "false positive", "true negative", "true positive")
-			
-		return(list(
-			HTML(paste0(
-				"true positives: ", round(PPV$hit/PPV$c*100, 1), "%; false negatives: ", round(PPV$miss/PPV$c*100, 1), 
-				"%; true negatives: ", round(PPV$truerejection/PPV$c*100, 1), "%; false positives: ", round(PPV$falsealarm/PPV$c*100, 1), "%<br><br>",
-				"<b>Positive predictive value (PPV)</b>: ", round(PPV$ppv*100, 1), "% of claimed findings are true</b><br>
+	  PPV <- computePPV()
+	  df.raw <- computePPV()$df %>%
+	    select(ground, test)
+	  
+	  # color translation tables
+	  colTrans <- c("darkblue", "red", "orange", "green3")
+	  names(colTrans) <- c("false negative", "false positive", "true negative", "true positive")
+	  
+	  colTrans2 <- c("white", "red", "white", "green3")
+	  names(colTrans2) <- c("false negative", "false positive", "true negative", "true positive")
+	  
+	  return(list(
+	    HTML(paste0(
+	      "true positives: ", round(PPV$hit/PPV$c*100, 1), "%; false negatives: ", round(PPV$miss/PPV$c*100, 1), 
+	      "%; true negatives: ", round(PPV$truerejection/PPV$c*100, 1), "%; false positives: ", round(PPV$falsealarm/PPV$c*100, 1), "%<br><br>",
+	      "<b>Positive predictive value (PPV)</b>: ", round(PPV$ppv*100, 1), "% of claimed findings are true</b><br>
 				 <b>False discovery rate (FDR)</b>: ", round(PPV$fdr*100, 1), "% of claimed findings are false</b>")),
-			h4("If we consider all findings, it looks like this (each point is one study):"),
-			renderPlot({
-				par(mar=c(0, 0, 0, 0))
-				plot(PPV$df$y, PPV$df$x, col=colTrans[PPV$df$type], pch=20, axes=FALSE, ylim=c(1, max(PPV$df$x)+3), xlab="", ylab="")
-				legend("top", pch=20, col=c("red", "orange", "green3", "darkblue"), legend=c("False positives", "True negatives", "True positives", "False negatives"), bty="n", horiz=TRUE, cex=1.3)
-			}, height=250),
-			br(),
-			HTML("<h4>If we consider <b>only the significant</b> findings, the ratio of true to false positives looks like this:</h4>"),
-			renderPlot({
-				par(mar=c(0, 0, 0, 0))
-				plot(PPV$df$y, PPV$df$x, col=colTrans2[PPV$df$type], pch=20, axes=FALSE, xlab="", ylab="")
-			}, height=250)
-		))
-		
+	    h4("If we consider all findings, it looks like this (each point is one study):"),
+	    renderPlotly({
+	        plot1 <- ggplot(df.raw) +
+	          geom_mosaic(aes(x = product(ground), fill = test)) +
+	          labs(x = "Null Hypothesis", y = "Alternative Hypothesis")
+	        ggplotly(plot1)
+	    })
+	  ))
+	  
 	})
+	
 	
 	# ---------------------------------------------------------------------
 	# Load demo data
