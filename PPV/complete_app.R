@@ -3,6 +3,7 @@ library(shinyjs)
 library(shinythemes)
 library(tidyverse)
 library(plotly)
+library(ggmosaic)
 
 helpPopup <- function(title, content,
                       placement=c('right', 'top', 'left', 'bottom'),
