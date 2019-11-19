@@ -91,9 +91,8 @@ such, because of bias. [...] Bias can entail manipulation in the analysis or rep
                            htmlOutput("res")
                     )			
                   ),
-                  HTML("<b>This <a href='http://www.nicebread.de/whats-the-probability-that-a-significant-p-value-indicates-a-true-effect/'>blog post</a> gives an introduction to the app.</b><br>"),
                   HTML("This app is based on Ioannidis, J. P. A. (2005). Why most published research findings are false. PLoS Medicine, 2(8), e124. <a href='http://doi.org/10.1371/journal.pmed.0020124'>http://doi.org/10.1371/journal.pmed.0020124</a><br>
-	Thanks to Nat Goodman for adding the option to specify power via effect size and sample size.")
+	Credits to Felix Schönbrodt")
 ))
     
 # input <- list(percTrue=30, alpha=.05, power=.35, bias=0)
@@ -234,12 +233,13 @@ server <- function(input, output, session) {
 	    h4("If we consider all findings, it looks like this:"),
 	    renderPlotly({
 	        plot1 <- df.raw %>%
-	          mutate(ground = case_when(ground == "TRUE" ~ "H0 is false",
-	                                    ground == "FALSE" ~ "H0 is true")) %>%
+	          mutate(ground = case_when(ground == "FALSE" ~ "H0 is true",
+	                                    ground == "TRUE" ~ "H0 is false")) %>%
+	          mutate(ground = factor(ground, levels = c("H0 is true", "H0 is false"))) %>%
 	          mutate(test = case_when(test == "TRUE" ~ "H0 rejected",
 	                                  test == "FALSE" ~ "H0 not rejected")) %>%
 	          ggplot() +
-	          geom_mosaic(aes(x = product(ground), fill = test), show.legend = F) +
+	          geom_mosaic(aes(x = product(ground), fill = test), show.legend = F, divider = mosaic("h")) +
 	          labs(x = "", y = "") +
 	          theme_classic()
 	        ggplotly(plot1, height = 550)
